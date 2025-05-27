@@ -1,4 +1,4 @@
-from src.transformer.specific import SignLineClearer
+from src._def.transformer.specific import SignLineClearer
 
 # Test the SignLineClearer with DEF file format signs
 def test_sign_clearer():

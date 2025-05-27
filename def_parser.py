@@ -1,35 +1,29 @@
 
 
-class LineTransformer:
-    '''
-    This is the base class for all the line transformers.
+from src.parser.specifig_parser import HeaderParser
+from src.parser.specifig_parser import BlockParserNoEnd
+from src.parser.specifig_parser import BlockParserWithEnd
 
-    The structure of each line will be formated as:
-    <sign (optional)> <key1> <key2> <value>
-    '''
-    def clear_line(self, line):
-        return line.strip()
-    
-    def transform(self, line):
-        pass
-
-class PropertyLineTransformer(LineTransformer):
-    def transform(self, line):
-        pass
-    
-
+from src._def.transformer.specific import component_block_transformer, net_block_transformer
+from tqdm import tqdm
+from loguru import logger
+import pickle
+import argparse
 class DefParser:
-    def __init__(self, def_file_path, Header_list, NoEndBlockList, WithEndBlockList):
+    def __init__(self, def_file_path, Header_list, NoEndBlockList, WithEndBlockList, used_prefix):
         self.def_file_path = def_file_path
         self.Header_list = Header_list
         self.NoEndBlockList = NoEndBlockList
         self.WithEndBlockList = WithEndBlockList
+        self.used_prefix = used_prefix
 
         self.header_parser = HeaderParser()
         self.block_parser_no_end = BlockParserNoEnd()
         self.block_parser_with_end = BlockParserWithEnd()
 
-        self.collector = {}
+        self.block_collector = {}
+        self.used_block_collector = {}
+        
 
     def parse(self):
         # Main parse loop: for each line, find the right parser and delegate
@@ -40,17 +34,34 @@ class DefParser:
                 except:
                     continue
                 if prefix in self.Header_list:
-                    self.collector[prefix] = self.header_parser.parse(f, line, prefix)
+                    self.block_collector[prefix] = self.header_parser.parse(f, line, prefix)
                 elif prefix in self.NoEndBlockList:
-                    if prefix not in self.collector:
-                        self.collector[prefix] = []
-                    self.collector[prefix].append(self.block_parser_no_end.parse(f, line, prefix))
+                    if prefix not in self.block_collector:
+                        self.block_collector[prefix] = []
+                    self.block_collector[prefix].append(self.block_parser_no_end.parse(f, line, prefix))
                 elif prefix in self.WithEndBlockList:
-                    self.collector[prefix] = self.block_parser_with_end.parse(f, line, prefix)
+                    self.block_collector[prefix] = self.block_parser_with_end.parse(f, line, prefix)
                 else:
                     print(f"Unknown prefix: {prefix}")
-        breakpoint()
+        
+        for prefix in self.used_prefix:
+            if prefix in self.block_collector:
+                self.used_block_collector[prefix] = self.block_collector[prefix]
+        
 
+        component_list = component_block_transformer.transform(self.used_block_collector['COMPONENTS'])
+        net_list = net_block_transformer.transform(self.used_block_collector['NETS'])
+        return {
+            'components': component_list,
+            'nets': net_list
+        }
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--def_path', type=str, default='test_data/complete.5.8.def', help='Path to the DEF file')
+parser.add_argument('--output_dir', type=str, default='def_output.pkl', help='Path to the output file')
+args = parser.parse_args()
+def_path = args.def_path
+output_dir = args.output_dir
 
 Header_list = set([
     "VERSION",
@@ -90,7 +101,34 @@ NoEndBlockList = set([
     "GCELLGRID",
 ])
 
+used_prefix = ['COMPONENTS', 'NETS']
+
 if __name__ == "__main__":
-    def_parser = DefParser("/home/lewis/1project/def_lef_py/test_data/complete.5.8.def", Header_list, NoEndBlockList, WithEndBlockList)
-    def_parser.parse()
+    logger.info("Start parsing DEF file")
+    def_parser =  DefParser(def_path, Header_list, NoEndBlockList, WithEndBlockList, used_prefix) # DefParser("/home/lewis/1project/def_lef_py/test_data/complete.5.8.def", Header_list, NoEndBlockList, WithEndBlockList, used_prefix)
+    def_content = def_parser.parse()
+    logger.info("Finish parsing DEF file")
+
+    instance2id = { ins_dict['ins_name']: index for index , ins_dict in enumerate(def_content['components'])}
+    id2instance_info = {}
+    for i, comp in tqdm(enumerate(def_content['components'])):
+        id2instance_info[i] = {
+            'instance_name': comp['ins_name'],
+            'cell_name': comp['cell_name'],
+        }
+    
+    
+    net2id = { net_dict['net_name']: index for index, net_dict in enumerate(def_content['nets'])}
+    id2net_info = {}
+    for i, net in tqdm(enumerate(def_content['nets'])):
+        id2net_info[i] = {
+            'net_name': net['net_name'],
+            'connections': [{'instance_name': ins_pin_dict['ins_name'] , 'pin_name': ins_pin_dict['pin_name'] }
+                            for ins_pin_dict in net['connections'] if ins_pin_dict['ins_name'] != 'PIN']
+        }
+        
+    def_output = {'instance2id': instance2id, 'id2instance_info': id2instance_info, 'net2id': net2id, 'id2net_info': id2net_info}
+    with open(output_dir + '/def_outputs.pkl', 'wb') as f:
+        pickle.dump(def_output, f)
+    
         

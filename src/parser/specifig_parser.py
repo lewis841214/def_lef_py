@@ -48,3 +48,33 @@ class DashParser(BaseParser):
                 if ";" in line:
                     break
         return self.record
+
+class PBlockParserWithEnd(BaseParser):
+    def __init__(self):
+        self.dash_parser = DashParser()
+
+    def parse(self, f, first_line, keyward):
+        # pn = first_line.split()[1]
+        self.record = []
+        while line := f.readline():
+            if line.strip() == f"END {keyward}":
+                break
+            else:
+                self.record.append(line)
+        return self.record
+
+class PnBlockParserWithEnd(BaseParser):
+    def __init__(self):
+        self.dash_parser = DashParser()
+
+    def parse(self, f, first_line, keyward):
+        pn = first_line.split()[1]
+        
+        self.record = []
+        while line := f.readline():
+            
+            if line.startswith(f"END"):# TODO: 这里需要修改
+                break
+            else:
+                self.record.append(line)
+        return self.record
