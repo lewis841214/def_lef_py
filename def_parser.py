@@ -140,6 +140,17 @@ if __name__ == "__main__":
             'connections': [{'instance_name': ins_pin_dict['ins_name'] , 'pin_name': ins_pin_dict['pin_name'] }
                             for ins_pin_dict in net['connections'] if ins_pin_dict['ins_name'] != 'PIN']
         }
+    
+    # Delete all cell with only one instance
+    seen = set([])
+    current_keys = [ele for ele in id2net_info.keys()]
+    for key in current_keys:
+        if key not in seen:
+            seen.add(key)
+            if len(id2net_info[key]['connections']) == 1:
+                del id2net_info[key]
+                current_keys.remove(key)
+            
         
     def_output = {'instance2id': instance2id, 'id2instanceInfo': id2instance_info, 'net2id': net2id, 'id2NetInfo': id2net_info}
     with open(output_dir + '/def_outputs.pkl', 'wb') as f:
