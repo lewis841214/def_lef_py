@@ -252,10 +252,10 @@ if __name__ == "__main__":
     lef_output = {'cell_dict': cell_dict}
     
     try:
-        with open(output_dir + '/lef_output.pkl', 'wb') as f:
+        with open(output_dir + '/lef_outputs.pkl', 'wb') as f:
             pickle.dump(lef_output, f)
     except Exception as e:
-        fb = open(output_dir + '/lef_output.pkl', 'wb')
+        fb = open(output_dir + '/lef_outputs.pkl', 'wb')
         pickle.dump(lef_output, fb)
         fb.close()
     # if result:
