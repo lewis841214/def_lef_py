@@ -32,8 +32,9 @@ class CommonLineSeperator(LineSeperator):
         """
         Separate line into tokens following these rules:
         1. + word should be put together as "+ word"
-        2. ( ) content should be put together
+        2. ( ) content should be put together ONLY when standalone (with whitespace before)
         3. " " content should be put together
+        4. Words with attached parentheses like "asdf(xxxx)" stay together
         """
         tokens = []
         i = 0
@@ -54,9 +55,9 @@ class CommonLineSeperator(LineSeperator):
                 # Skip whitespace after +
                 while j < len(line) and line[j].isspace():
                     j += 1
-                # Find end of word
+                # Find end of word (including parentheses if attached)
                 word_start = j
-                while j < len(line) and not line[j].isspace() and line[j] not in '()':
+                while j < len(line) and not line[j].isspace() and line[j] != '"':
                     j += 1
                 if word_start < j:
                     tokens.append(f"+ {line[word_start:j]}")
@@ -66,8 +67,8 @@ class CommonLineSeperator(LineSeperator):
                     i += 1
                 continue
             
-            # Rule 2: Handle parentheses content
-            if line[i] == '(':
+            # Rule 2: Handle standalone parentheses content (only when preceded by whitespace or start of line)
+            if line[i] == '(' and (i == 0 or line[i-1].isspace()):
                 j = i + 1
                 paren_count = 1
                 while j < len(line) and paren_count > 0:
@@ -94,12 +95,19 @@ class CommonLineSeperator(LineSeperator):
                 i = j
                 continue
             
-            # Handle regular words
+            # Handle regular words (including words with attached parentheses)
             j = i
-            while j < len(line) and not line[j].isspace() and line[j] not in '()"':
+            while j < len(line) and not line[j].isspace() and line[j] != '"':
+                # Special case: if we hit a '(' that's preceded by whitespace, stop here
+                if line[j] == '(' and j > i and line[j-1].isspace():
+                    break
                 j += 1
-            tokens.append(line[i:j])
-            i = j
+            
+            if j > i:  # Only add non-empty tokens
+                tokens.append(line[i:j])
+                i = j
+            else:
+                i += 1  # Skip single character if we couldn't form a token
         
         return tokens
 
