@@ -127,7 +127,7 @@ if __name__ == "__main__":
                             for ins_pin_dict in net['connections'] if ins_pin_dict['ins_name'] != 'PIN']
         }
         
-    def_output = {'instance2id': instance2id, 'id2instanceInfo': id2instance_info, 'net2id': net2id, 'id2net_info': id2net_info}
+    def_output = {'instance2id': instance2id, 'id2instanceInfo': id2instance_info, 'net2id': net2id, 'id2NetInfo': id2net_info}
     with open(output_dir + '/def_outputs.pkl', 'wb') as f:
         pickle.dump(def_output, f)
     
