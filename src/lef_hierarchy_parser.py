@@ -7,7 +7,14 @@ from LEF files in the exact format requested by the user.
 """
 
 from typing import Dict, List, Any, Optional
-from .lef_parser import LEFParser
+import os
+
+# Handle both relative and absolute imports
+try:
+    from .lef_parser import LEFParser
+except ImportError:
+    # If relative import fails, try absolute import
+    from lef_parser import LEFParser
 
 class LEFHierarchyParser:
     """
@@ -273,8 +280,34 @@ def extract_lef_hierarchy(lef_file_path: str) -> Dict[str, Dict[str, Any]]:
 
 # Example usage
 if __name__ == "__main__":
+    # Determine the correct path to the test data file
+    # This works whether running from src/ or from root directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if os.path.basename(current_dir) == 'src':
+        # Running from src directory
+        lef_file = "../test_data/complete.5.8.lef"
+    else:
+        # Running from root directory
+        lef_file = "test_data/complete.5.8.lef"
+    
+    # Check if file exists, if not try alternative paths
+    if not os.path.exists(lef_file):
+        alternative_paths = [
+            "test_data/complete.5.8.lef",
+            "../test_data/complete.5.8.lef",
+            "../../test_data/complete.5.8.lef"
+        ]
+        for alt_path in alternative_paths:
+            if os.path.exists(alt_path):
+                lef_file = alt_path
+                break
+        else:
+            print("Error: Could not find complete.5.8.lef file")
+            print("Please ensure the test data file exists in test_data/complete.5.8.lef")
+            exit(1)
+    
     # Example usage
-    parser = LEFHierarchyParser("../test_data/complete.5.8.lef")
+    parser = LEFHierarchyParser(lef_file)
     
     # Get all macros
     print("Available macros:", parser.get_available_macros())
