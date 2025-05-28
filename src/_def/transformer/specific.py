@@ -17,6 +17,15 @@ class CommonLineClearer(LineClearer):
         
         return cleaned_line
 
+class MultiLineLineClearer(LineClearer):
+    """Enhanced cleaner for multi-line content"""
+    def __init__(self):
+        self.end_sign = ';'
+
+    def clear_line(self, line):
+        """For multi-line content, the line is already cleaned by the parser"""
+        return line.strip()
+
 class CommonLineSeperator(LineSeperator):
 
     def seperate(self, line):
@@ -140,6 +149,69 @@ class NetHeadFormatter(LineFormatter):
             'connections': connections
         }
 
+class EnhancedNetHeadFormatter(LineFormatter):
+    '''
+    Enhanced formatter for multi-line NET definitions
+    - { netName [( {compName | PIN} pinName [+ SYNTHESIZED])]
+    '''
+    
+    def format(self, seperate_components):
+        if len(seperate_components) < 2:
+            return {
+                'net_name': 'UNKNOWN',
+                'connections': [],
+                'properties': []
+            }
+        
+        net_name = seperate_components[1]
+        connections = []
+        properties = []
+        
+        i = 2
+        while i < len(seperate_components):
+            token = seperate_components[i]
+            
+            # Handle connection entries: ( ins_name pin_name )
+            if token.startswith('(') and token.endswith(')'):
+                cleaned = token.strip('() ')
+                parts = cleaned.split()
+                if len(parts) >= 2:
+                    ins_name = parts[0]
+                    pin_name = parts[1]
+                    connections.append({
+                        'ins_name': ins_name,
+                        'pin_name': pin_name
+                    })
+                i += 1
+            
+            # Handle properties: + PROPERTY_NAME [value]
+            elif token.startswith('+ '):
+                property_name = token[2:]  # Remove "+ "
+                property_value = None
+                
+                # Check if next token is a value (not starting with + or ()
+                if (i + 1 < len(seperate_components) and 
+                    not seperate_components[i + 1].startswith('+') and 
+                    not seperate_components[i + 1].startswith('(')):
+                    property_value = seperate_components[i + 1]
+                    i += 2
+                else:
+                    i += 1
+                
+                properties.append({
+                    'name': property_name,
+                    'value': property_value
+                })
+            
+            else:
+                i += 1
+        
+        return {
+            'net_name': net_name,
+            'connections': connections,
+            'properties': properties
+        }
+
 #############################################
 # Specific Section transformer
 #############################################
@@ -163,6 +235,29 @@ class NoPerpertySectionTransformer(SectionTransformer):
         formatted_head_line = self.line_formatter.format(seperated_head_line)
         return formatted_head_line
 
+class EnhancedSectionTransformer(SectionTransformer):
+    '''
+    Enhanced transformer for multi-line sections
+    '''
+    def __init__(self, line_cleaner, line_seperator, line_formatter):
+        self.line_cleaner = line_cleaner
+        self.line_seperator = line_seperator
+        self.line_formatter = line_formatter
+
+    def transform(self, raw_section: dict):
+        '''
+        input: {'head_section': full_content, 'property_section':[], 'raw_content': [lines]}
+        '''
+        # Use the already cleaned head_section from MultiLineDashParser
+        head_line = raw_section['head_section']
+        seperated_head_line = self.line_seperator.seperate(head_line)
+        formatted_head_line = self.line_formatter.format(seperated_head_line)
+        
+        # Add raw content for debugging if needed
+        if 'raw_content' in raw_section:
+            formatted_head_line['raw_lines'] = raw_section['raw_content']
+        
+        return formatted_head_line
 
 #############################################
 # Specific Block transformer
@@ -191,6 +286,29 @@ class NoPropertyBlockTransformer(BlockTransformer):
 
         return component_list
 
+class EnhancedBlockTransformer(BlockTransformer):
+    '''
+    Enhanced transformer for multi-line blocks
+    '''
+    def __init__(self, line_cleaner, line_seperator, line_formatter):
+        self.section_transformer = EnhancedSectionTransformer(
+            line_cleaner,
+            line_seperator,
+            line_formatter
+        )
+
+    def transform(self, list_of_raw_sections: list[dict]):
+        '''
+        input: [{'head_section': full_content, 'property_section':[], 'raw_content': [lines]}]
+        '''
+        result_list = []
+        
+        for raw_section in list_of_raw_sections:
+            transformed_section = self.section_transformer.transform(raw_section)
+            result_list.append(transformed_section)
+
+        return result_list
+
 component_block_transformer = NoPropertyBlockTransformer(
     CommonLineClearer(),
     CommonLineSeperator(),
@@ -201,4 +319,11 @@ net_block_transformer = NoPropertyBlockTransformer(
     CommonLineClearer(),
     CommonLineSeperator(),
     NetHeadFormatter()
+)
+
+# Enhanced NET transformer for multi-line support
+enhanced_net_block_transformer = EnhancedBlockTransformer(
+    MultiLineLineClearer(),
+    CommonLineSeperator(),
+    EnhancedNetHeadFormatter()
 )

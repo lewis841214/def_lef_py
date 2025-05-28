@@ -1,10 +1,9 @@
-
-
+import os
 from src.parser.specifig_parser import HeaderParser
 from src.parser.specifig_parser import BlockParserNoEnd
-from src.parser.specifig_parser import BlockParserWithEnd
+from src.parser.specifig_parser import BlockParserWithEnd, MultiLineBlockParserWithEnd
 
-from src._def.transformer.specific import component_block_transformer, net_block_transformer
+from src._def.transformer.specific import component_block_transformer, enhanced_net_block_transformer
 from tqdm import tqdm
 from loguru import logger
 import pickle
@@ -20,29 +19,43 @@ class DefParser:
         self.header_parser = HeaderParser()
         self.block_parser_no_end = BlockParserNoEnd()
         self.block_parser_with_end = BlockParserWithEnd()
+        # Enhanced parser for multi-line blocks like NETS
+        self.multiline_block_parser = MultiLineBlockParserWithEnd()
 
         self.block_collector = {}
         self.used_block_collector = {}
         
 
     def parse(self):
+        # Get file size for progress tracking
+        file_size = os.path.getsize(self.def_file_path)
+        
         # Main parse loop: for each line, find the right parser and delegate
         with open(self.def_file_path, "r", encoding='utf-8', errors='ignore') as f:
-            while line := f.readline():
-                try:
-                    prefix = line.split()[0]
-                except:
-                    continue
-                if prefix in self.Header_list:
-                    self.block_collector[prefix] = self.header_parser.parse(f, line, prefix)
-                elif prefix in self.NoEndBlockList:
-                    if prefix not in self.block_collector:
-                        self.block_collector[prefix] = []
-                    self.block_collector[prefix].append(self.block_parser_no_end.parse(f, line, prefix))
-                elif prefix in self.WithEndBlockList:
-                    self.block_collector[prefix] = self.block_parser_with_end.parse(f, line, prefix)
-                else:
-                    print(f"Unknown prefix: {prefix}")
+            # Create progress bar
+            with tqdm(total=file_size, unit='B', unit_scale=True, desc="Parsing DEF file") as pbar:
+                while line := f.readline():
+                    # Update progress bar
+                    pbar.update(len(line.encode('utf-8')))
+                    
+                    try:
+                        prefix = line.split()[0]
+                    except:
+                        continue
+                    if prefix in self.Header_list:
+                        self.block_collector[prefix] = self.header_parser.parse(f, line, prefix)
+                    elif prefix in self.NoEndBlockList:
+                        if prefix not in self.block_collector:
+                            self.block_collector[prefix] = []
+                        self.block_collector[prefix].append(self.block_parser_no_end.parse(f, line, prefix))
+                    elif prefix in self.WithEndBlockList:
+                        # Use enhanced parser for NETS to handle multi-line entries
+                        if prefix == "NETS":
+                            self.block_collector[prefix] = self.multiline_block_parser.parse(f, line, prefix)
+                        else:
+                            self.block_collector[prefix] = self.block_parser_with_end.parse(f, line, prefix)
+                    else:
+                        print(f"Unknown prefix: {prefix}")
         
         for prefix in self.used_prefix:
             if prefix in self.block_collector:
@@ -50,7 +63,8 @@ class DefParser:
         
 
         component_list = component_block_transformer.transform(self.used_block_collector['COMPONENTS'])
-        net_list = net_block_transformer.transform(self.used_block_collector['NETS'])
+        # Use enhanced transformer for NETS
+        net_list = enhanced_net_block_transformer.transform(self.used_block_collector['NETS'])
         return {
             'components': component_list,
             'nets': net_list
@@ -58,7 +72,7 @@ class DefParser:
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--def_path', type=str, default='test_data/complete.5.8.def', help='Path to the DEF file')
-parser.add_argument('--output_dir', type=str, default='def_output.pkl', help='Path to the output file')
+parser.add_argument('--output_dir', type=str, default='./tmp', help='Path to the output file')
 args = parser.parse_args()
 def_path = args.def_path
 output_dir = args.output_dir
@@ -130,5 +144,6 @@ if __name__ == "__main__":
     def_output = {'instance2id': instance2id, 'id2instanceInfo': id2instance_info, 'net2id': net2id, 'id2NetInfo': id2net_info}
     with open(output_dir + '/def_outputs.pkl', 'wb') as f:
         pickle.dump(def_output, f)
+    breakpoint()
     
         

@@ -33,6 +33,22 @@ class BlockParserWithEnd(BaseParser):
                 break
         return self.record
 
+class MultiLineBlockParserWithEnd(BaseParser):
+    """Enhanced parser for blocks that can have multi-line entries (like NETS)"""
+    def __init__(self):
+        self.dash_parser = MultiLineDashParser()
+
+    def parse(self, f, first_line, keyward):
+        self.record = []
+        while line := f.readline():
+            if line.strip().startswith("- "):
+                self.record.append(self.dash_parser.parse(f, line, keyward))
+            if line == '\n':
+                continue
+            if line.strip() == f"END {keyward}":
+                break
+        return self.record
+
 class DashParser(BaseParser):
 
     def parse(self, f, first_line, keyward):
@@ -48,6 +64,47 @@ class DashParser(BaseParser):
                 if ";" in line:
                     break
         return self.record
+
+class MultiLineDashParser(BaseParser):
+    """Enhanced parser that can handle multi-line dash entries"""
+    
+    def parse(self, f, first_line, keyward):
+        """
+        Parse a dash entry that may span multiple lines.
+        Collects all content from the dash line until the semicolon.
+        """
+        # Collect all lines for this dash entry
+        all_content = [first_line.strip()]
+        
+        # If the first line already has a semicolon, we're done
+        if ";" in first_line:
+            # Remove the semicolon and join everything
+            full_content = first_line.strip()
+            if full_content.endswith(';'):
+                full_content = full_content[:-1].strip()
+            
+            return {
+                'head_section': full_content,
+                'property_section': [],
+                'raw_content': [first_line.strip()]
+            }
+        
+        # Otherwise, keep reading until we find the semicolon
+        while line := f.readline():
+            all_content.append(line.strip())
+            if ";" in line:
+                break
+        
+        # Join all content and remove the final semicolon
+        full_content = ' '.join(all_content)
+        if full_content.endswith(';'):
+            full_content = full_content[:-1].strip()
+        
+        return {
+            'head_section': full_content,
+            'property_section': [],
+            'raw_content': all_content
+        }
 
 class PBlockParserWithEnd(BaseParser):
     def __init__(self):

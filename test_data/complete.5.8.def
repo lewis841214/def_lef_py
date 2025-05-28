@@ -209,7 +209,7 @@ END VIAS
 
 ###############################################################################
 # [STYLES numStyles ;
-#     {- STYLE styleNum pt pt pt … ;} ...
+#     {- STYLE styleNum pt pt pt ï¿½ ;} ...
 # END STYLES]
 ###############################################################################
 STYLES 10 ;
@@ -229,7 +229,7 @@ END STYLES
 
 ###############################################################################
 # [NONDEFAULTRULES numNDRs ;
-#     {- STYLE styleNum pt pt pt … ;} ...
+#     {- STYLE styleNum pt pt pt ï¿½ ;} ...
 # END NONDEFAULTRULES]
 ###############################################################################
 NONDEFAULTRULES 1 ;
@@ -773,7 +773,12 @@ END SPECIALNETS
 # ( x y [value] ) 
 # {( x * [value]) | ( * y [value]) | ( * * [value] ) | viaName | + RECT ( delta1x delta1y delta2x delta2y ) | + VIRTUAL ( x y ) ]...] 
 ###############################################################################
-NETS 6 ;
+NETS 7 ;
+- TESTNET
+  ( I1 A )
+  ( PIN P0 )
+  ( I3 A )
+  ;
 - SCAN ( scancell1 PA10 + SYNTHESIZED ) ( scancell2 PA2 + SYNTHESIZED )
   + SOURCE TEST ;
 - N1 ( I1 A ) ( PIN P0 )
