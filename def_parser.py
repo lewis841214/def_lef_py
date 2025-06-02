@@ -126,10 +126,17 @@ if __name__ == "__main__":
     instance2id = { ins_dict['ins_name']: index for index , ins_dict in enumerate(def_content['components'])}
     id2instance_info = {}
     for i, comp in tqdm(enumerate(def_content['components'])):
-        id2instance_info[i] = {
-            'instance_name': comp['ins_name'],
-            'cell_name': comp['cell_name'],
-        }
+        if 'placementInfo' in comp:
+            id2instance_info[i] = {
+                'instance_name': comp['ins_name'],
+                'cell_name': comp['cell_name'],
+                'placementInfo': comp['placementInfo']
+            }
+        else:
+            id2instance_info[i] = {
+                'instance_name': comp['ins_name'],
+                'cell_name': comp['cell_name'],
+            }
     
     
     net2id = { net_dict['net_name']: index for index, net_dict in enumerate(def_content['nets'])}
@@ -151,7 +158,6 @@ if __name__ == "__main__":
                 del id2net_info[key]
                 current_keys.remove(key)
             
-        
     def_output = {'instance2id': instance2id, 'id2instanceInfo': id2instance_info, 'net2id': net2id, 'id2NetInfo': id2net_info}
     with open(output_dir + '/def_outputs.pkl', 'wb') as f:
         pickle.dump(def_output, f)

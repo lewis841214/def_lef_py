@@ -239,7 +239,6 @@ class EnhancedNetHeadFormatter(LineFormatter):
                 'connections': [],
                 'properties': []
             }
-        breakpoint()
         net_name = seperate_components[1]
         connections = []
         properties = []
