@@ -50,7 +50,7 @@ class DefParser:
                         self.block_collector[prefix].append(self.block_parser_no_end.parse(f, line, prefix))
                     elif prefix in self.WithEndBlockList:
                         # Use enhanced parser for NETS to handle multi-line entries
-                        if prefix == "NETS":
+                        if prefix == "NETS" or prefix == "COMPONENTS":
                             self.block_collector[prefix] = self.multiline_block_parser.parse(f, line, prefix)
                         else:
                             self.block_collector[prefix] = self.block_parser_with_end.parse(f, line, prefix)

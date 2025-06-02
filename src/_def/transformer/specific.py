@@ -117,17 +117,86 @@ class CommonLineSeperator(LineSeperator):
 class ComponentHeadFormatter(LineFormatter):
     '''
     - compName modelName[netName | *]
+    + FEATURE value1 value2 ...
     '''
     
     def format(self, seperate_components):
-        # breakpoint()
+        if len(seperate_components) < 3:
+            return {
+                'ins_name': 'UNKNOWN',
+                'cell_name': 'UNKNOWN',
+                'features': {}
+            }
+        
         ins_name = seperate_components[1]
         cell_name = seperate_components[2]
-        return {
-            'ins_name': ins_name,
-            'cell_name': cell_name
-        }
-
+        
+        # Parse features starting from index 3
+        features = {}
+        i = 3
+        
+        while i < len(seperate_components):
+            token = seperate_components[i]
+            
+            # Look for feature tokens that start with "+"
+            if token.startswith('+ '):
+                feature_name = token[2:]  # Remove "+ " prefix
+                feature_values = []
+                
+                # Collect values until next "+" token or end of list
+                i += 1
+                while i < len(seperate_components) and not seperate_components[i].startswith('+ '):
+                    feature_values.append(seperate_components[i])
+                    i += 1
+                
+                # Store as tuple (single value becomes single-element tuple)
+                if len(feature_values) == 1:
+                    features[feature_name] = feature_values[0]
+                else:
+                    features[feature_name] = tuple(feature_values)
+            else:
+                i += 1
+        
+        
+        # Extract placement info if PLACED feature exists
+        placement_info = {}
+        if 'PLACED' in features:
+            placed_data = features['PLACED']
+            if isinstance(placed_data, tuple) and len(placed_data) >= 2:
+                coords_str = placed_data[0]  # '( 100 100 )'
+                orientation = placed_data[1]  # 'N'
+                
+                # Parse coordinates from string like '( 100 100 )'
+                coords_cleaned = coords_str.strip('() ')
+                coord_parts = coords_cleaned.split()
+                if len(coord_parts) >= 2:
+                    try:
+                        x = int(coord_parts[0])
+                        y = int(coord_parts[1])
+                        placement_info = {
+                            'x': x,
+                            'y': y,
+                            'orientation': orientation
+                        }
+                    except ValueError:
+                        # If conversion fails, store as strings
+                        placement_info = {
+                            'x': coord_parts[0],
+                            'y': coord_parts[1],
+                            'orientation': orientation
+                        }
+            return {
+                'ins_name': ins_name,
+                'cell_name': cell_name,
+                'placementInfo': (placement_info['x'], placement_info['y'], placement_info['orientation']),
+                'features': features
+            }
+        else:
+            return {
+                'ins_name': ins_name,
+                'cell_name': cell_name,
+                'features': features
+            }
 class NetHeadFormatter(LineFormatter):
     '''
     - { netName [( {compName | PIN} pinName 
@@ -170,7 +239,7 @@ class EnhancedNetHeadFormatter(LineFormatter):
                 'connections': [],
                 'properties': []
             }
-        
+        breakpoint()
         net_name = seperate_components[1]
         connections = []
         properties = []
@@ -317,8 +386,8 @@ class EnhancedBlockTransformer(BlockTransformer):
 
         return result_list
 
-component_block_transformer = NoPropertyBlockTransformer(
-    CommonLineClearer(),
+component_block_transformer = EnhancedBlockTransformer(
+    MultiLineLineClearer(),
     CommonLineSeperator(),
     ComponentHeadFormatter()
 )
