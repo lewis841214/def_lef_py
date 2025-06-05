@@ -197,6 +197,7 @@ class ComponentHeadFormatter(LineFormatter):
                 'cell_name': cell_name,
                 'features': features
             }
+
 class NetHeadFormatter(LineFormatter):
     '''
     - { netName [( {compName | PIN} pinName 
@@ -244,11 +245,12 @@ class EnhancedNetHeadFormatter(LineFormatter):
         properties = []
         
         i = 2
+        property_start = False
+        # Here 
         while i < len(seperate_components):
             token = seperate_components[i]
-            
             # Handle connection entries: ( ins_name pin_name )
-            if token.startswith('(') and token.endswith(')'):
+            if token.startswith('(') and token.endswith(')') and not property_start:
                 cleaned = token.strip('() ')
                 parts = cleaned.split()
                 if len(parts) >= 2:
@@ -262,6 +264,7 @@ class EnhancedNetHeadFormatter(LineFormatter):
             
             # Handle properties: + PROPERTY_NAME [value]
             elif token.startswith('+ '):
+                property_start = True
                 property_name = token[2:]  # Remove "+ "
                 property_value = None
                 

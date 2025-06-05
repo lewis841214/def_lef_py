@@ -773,7 +773,7 @@ END SPECIALNETS
 # ( x y [value] ) 
 # {( x * [value]) | ( * y [value]) | ( * * [value] ) | viaName | + RECT ( delta1x delta1y delta2x delta2y ) | + VIRTUAL ( x y ) ]...] 
 ###############################################################################
-NETS 7 ;
+NETS 8 ;
 - TESTNET
   ( I1 A )
   ( PIN P0 )
@@ -863,6 +863,16 @@ NETS 7 ;
 - ARRAYNET[0][10] ;
 - vectormodule[1]/vectornet[0] ;
 - vectormodule[1]/scalarnet ;
+- dp_a[3842] 
+  ( PIN dp_a[3842] ) ( ctrl_1056996 A2 )
+  ( arows_mux_7__u_mux_a_in_pipe4_reg_0__exp_1_0__significand_1_0__ D1 )
+  ( MTK_PreCTS_FE_0FCC586107_dp_a_3842 I )
+  ( MTK_PreCTS_FE_0CPC586107_dp_a_3842 I )
+  + ROUTED M0 ( 967056 62348 ) VIRTUAL ( * 62348 )
+    NEW M0 ( 960672 67232 ) VIRTUAL ( * 67232 )
+    NEW M0 ( 960672 67488 ) VIRTUAL ( * 67488 )
+    NEW M0 ( 966480 67496 ) VIRTUAL ( * 67232 )
+  + PROPERTY StroutedReScaleProp 1.080000 StrRoutedCapScaleProp 1.030000 ;
 END NETS
 
 
