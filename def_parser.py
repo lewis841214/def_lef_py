@@ -158,7 +158,6 @@ if __name__ == "__main__":
                 del id2net_info[key]
                 current_keys.remove(key)
     
-    breakpoint()
     def_output = {'instance2id': instance2id, 'id2instanceInfo': id2instance_info, 'net2id': net2id, 'id2NetInfo': id2net_info}
     with open(output_dir + '/def_outputs.pkl', 'wb') as f:
         pickle.dump(def_output, f)

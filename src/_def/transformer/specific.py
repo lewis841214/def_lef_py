@@ -243,7 +243,7 @@ class EnhancedNetHeadFormatter(LineFormatter):
         net_name = seperate_components[1]
         connections = []
         properties = []
-        
+        # breakpoint()
         i = 2
         property_start = False
         # Here 
