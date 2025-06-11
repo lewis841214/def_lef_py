@@ -261,27 +261,27 @@ class QualityController:
                     print(f"    Line: {issue.line_number}")
                 print()
         
-        if report.has_warnings():
-            print(f"\nWARNINGS ({len(report.get_warnings())}):")
-            print("-" * 40)
-            for issue in report.get_warnings():
-                print(f"  [{issue.category}] {issue.message}")
-                if issue.file_name != "unknown":
-                    print(f"    File: {issue.file_name}")
-                if issue.line_number is not None:
-                    print(f"    Line: {issue.line_number}")
-                print()
+        # if report.has_warnings():
+        #     print(f"\nWARNINGS ({len(report.get_warnings())}):")
+        #     print("-" * 40)
+        #     for issue in report.get_warnings():
+        #         print(f"  [{issue.category}] {issue.message}")
+        #         if issue.file_name != "unknown":
+        #             print(f"    File: {issue.file_name}")
+        #         if issue.line_number is not None:
+        #             print(f"    Line: {issue.line_number}")
+        #         print()
         
-        # Print info messages (limited to avoid spam)
-        info_issues = report.get_info()
-        if info_issues:
-            print(f"\nINFO ({len(info_issues)}) - showing first 10:")
-            print("-" * 40)
-            for issue in info_issues[:10]:
-                print(f"  [{issue.category}] {issue.message}")
-            if len(info_issues) > 10:
-                print(f"  ... and {len(info_issues) - 10} more info messages")
-            print()
+        # # Print info messages (limited to avoid spam)
+        # info_issues = report.get_info()
+        # if info_issues:
+        #     print(f"\nINFO ({len(info_issues)}) - showing first 10:")
+        #     print("-" * 40)
+        #     for issue in info_issues[:10]:
+        #         print(f"  [{issue.category}] {issue.message}")
+        #     if len(info_issues) > 10:
+        #         print(f"  ... and {len(info_issues) - 10} more info messages")
+        #     print()
         
         print("="*80)
     
@@ -308,6 +308,9 @@ class QualityController:
                 
                 # Write all issues
                 for issue in report.issues:
+                    # only write error issues
+                    if issue.severity != Severity.ERROR:
+                        continue
                     f.write(f"[{issue.severity.value}] [{issue.category}] {issue.message}\n")
                     if issue.file_name != "unknown":
                         f.write(f"  File: {issue.file_name}\n")
