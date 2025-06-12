@@ -370,6 +370,10 @@ def main():
                        help='Path to DEF file')
     parser.add_argument('--lef_file', type=str, default='./test_data/complete.5.8.lef',
                        help='Path to LEF file')
+    parser.add_argument('--lib_profiler_path', type=str, default='./test_data/lib_profiler_outputs',
+                       help='Path to library profiler data')
+    parser.add_argument('--eqpin_path', type=str, default='./test_data/eqpin_outputs',
+                       help='Path to EQPin data')
     
     args = parser.parse_args()
     
