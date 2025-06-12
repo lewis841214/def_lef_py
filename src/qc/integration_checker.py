@@ -144,6 +144,25 @@ class IntegrationChecker:
         
         lib_profiler_data = self._get_lib_profiler_data(lib_profiler_path)
 
+        if lib_profiler_data.empty:
+            self.report.add_issue(QCIssue(
+                severity=Severity.ERROR,
+                category="LIB_PROFILER",
+                message="Library profiler data is empty",
+                file_name="lib_profiler",
+                details={"placeholder": True}
+            ))
+            return self.report
+        
+        if lib_profiler_data.cell.duplicated().any():
+            self.report.add_issue(QCIssue(
+                severity=Severity.ERROR,
+                category="LIB_PROFILER",
+                message=f"Library profiler data contains duplicate cells",
+                file_name="lib_profiler",
+                details={"duplicate_cells": lib_profiler_data[lib_profiler_data.cell.duplicated()]}
+            ))
+
         if not lib_profiler_path:
             self.report.add_issue(QCIssue(
                 severity=Severity.INFO,
@@ -153,6 +172,8 @@ class IntegrationChecker:
                 details={"placeholder": True}
             ))
             return self.report
+
+
         
         # Extract cell types from DEF
         used_cells = set()
@@ -180,7 +201,6 @@ class IntegrationChecker:
                 continue
             df = pd.read_csv(Path(lib_profiler_path, f))
             dfs.append(df[['cell', 'footprint', 'prefix', 'input_cap', 'group']])
-        breakpoint()
         return pd.concat(dfs)
 
     def check_eqpin_file(self, eqpin_data: Optional[Dict[str, Any]] = None) -> QCReport:
