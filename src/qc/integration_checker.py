@@ -8,6 +8,9 @@ Validates cross-references between DEF and LEF data including:
 """
 
 from typing import Dict, List, Any, Optional, Set
+import pandas as pd
+from pathlib import Path
+import os
 from .models import QCIssue, QCReport, Severity
 
 
@@ -125,13 +128,13 @@ class IntegrationChecker:
                     self.report.add_issue(QCIssue(severity=Severity.ERROR, category="INTEGRATION", message=f"Instance {ins_name} with cellname {ins2cell_dict[ins_name]} used in NETS but not found in LEF", file_name="integration", details={"instance": ins_name}))
                
                 
-    def check_lib_profiler_cells(self, def_data: Dict[str, Any], lib_profiler_data: Optional[Dict[str, Any]] = None) -> QCReport:
+    def check_lib_profiler_cells(self, def_data: Dict[str, Any], lib_profiler_path: Optional[str] = None) -> QCReport:
         """
         Check library profiler data against DEF components (placeholder implementation)
         
         Args:
             def_data: Dictionary containing parsed DEF data
-            lib_profiler_data: Optional library profiler data (placeholder)
+            lib_profiler_path: Optional path to library profiler data (placeholder)
             
         Returns:
             QCReport: Report containing all found issues
@@ -139,7 +142,7 @@ class IntegrationChecker:
         # Placeholder implementation for lib_profiler unit test
         components = def_data.get('components', [])
         
-        if not lib_profiler_data:
+        if not lib_profiler_path:
             self.report.add_issue(QCIssue(
                 severity=Severity.INFO,
                 category="LIB_PROFILER",
@@ -166,6 +169,18 @@ class IntegrationChecker:
         
         return self.report
     
+    def _get_lib_profiler_data(self, lib_profiler_path: str) -> pd.DataFrame:
+        all_files = os.listdir(lib_profiler_path)
+        dfs = []
+        # for f in cfg.netlist_variable.prefix_files:
+        for f in all_files:
+            if f[-1] == '#':
+                continue
+            df = pd.read_csv(Path(lib_profiler_path, f))
+            dfs.append(df[['cell', 'footprint', 'prefix', 'input_cap', 'group']])
+        breakpoint()
+        return pd.concat(dfs)
+
     def check_eqpin_file(self, eqpin_data: Optional[Dict[str, Any]] = None) -> QCReport:
         """
         Check EQPin file data (placeholder implementation)

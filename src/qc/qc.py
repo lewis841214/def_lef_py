@@ -10,6 +10,7 @@ Orchestrates all quality checks for DEF/LEF files including:
 
 import os
 import pickle
+from loguru import logger
 from typing import Dict, List, Any, Optional
 from .models import QCIssue, QCReport, Severity
 from .def_checker import DefChecker
@@ -27,8 +28,8 @@ class QualityController:
         self.master_report = QCReport()
     
     def run_full_quality_check(self, def_data: Dict[str, Any], lef_data: Dict[str, Any], 
-                              lib_profiler_data: Optional[Dict[str, Any]] = None,
-                              eqpin_data: Optional[Dict[str, Any]] = None,
+                              lib_profiler_path: Optional[str] = None,
+                              eqpin_path: Optional[str] = None,
                               def_file_path: Optional[str] = None,
                               lef_file_path: Optional[str] = None) -> QCReport:
         """
@@ -37,9 +38,10 @@ class QualityController:
         Args:
             def_data: Parsed DEF file data
             lef_data: Parsed LEF file data
-            lib_profiler_data: Optional library profiler data
-            eqpin_data: Optional EQPin file data
+            lib_profiler_path: Optional path to library profiler data
+            eqpin_path: Optional path to EQPin data
             def_file_path: Optional path to original DEF file for structure check
+            lef_file_path: Optional path to original LEF file for structure check
             
         Returns:
             QCReport: Comprehensive report with all issues found
@@ -70,10 +72,10 @@ class QualityController:
         integration_report = self.run_def_lef_integration_tests(def_data, lef_data)
         self.master_report.merge(integration_report)
         
-        # # 4. Library Profiler Tests (placeholder)
-        # print("  Running library profiler tests...")
-        # lib_report = self.run_lib_profiler_tests(def_data, lib_profiler_data)
-        # self.master_report.merge(lib_report)
+        # 4. Library Profiler Tests (placeholder)
+        print("  Running library profiler tests...")
+        lib_report = self.run_lib_profiler_tests(def_data, lib_profiler_path)
+        self.master_report.merge(lib_report)
         
         # # 5. EQPin Tests (placeholder)
         # print("  Running EQPin tests...")
@@ -136,7 +138,7 @@ class QualityController:
         return self.integration_checker.check_def_lef_integration(def_data, lef_data)
     
     def run_lib_profiler_tests(self, def_data: Dict[str, Any], 
-                              lib_profiler_data: Optional[Dict[str, Any]] = None) -> QCReport:
+                              lib_profiler_path : Optional[str] = None) -> QCReport:
         """
         Run library profiler tests (placeholder)
         
@@ -147,12 +149,12 @@ class QualityController:
         
         Args:
             def_data: Parsed DEF file data
-            lib_profiler_data: Optional library profiler data
+            lib_profiler_path: Optional path to library profiler data
             
         Returns:
             QCReport: Report with library profiler issues
         """
-        return self.integration_checker.check_lib_profiler_cells(def_data, lib_profiler_data)
+        return self.integration_checker.check_lib_profiler_cells(def_data, lib_profiler_path)
     
     def run_eqpin_tests(self, eqpin_data: Optional[Dict[str, Any]] = None) -> QCReport:
         """
@@ -391,7 +393,8 @@ def main():
         print("Warning: No LEF data loaded. Running DEF-only checks.")
         report = qc.run_def_unit_tests(def_data)
     else:
-        report = qc.run_full_quality_check(def_data, lef_data, def_file_path=args.def_file , lef_file_path=args.lef_file )
+        report = qc.run_full_quality_check(def_data, lef_data, def_file_path=args.def_file , lef_file_path=args.lef_file,\
+                                           lib_profiler_path = args.lib_profiler_path, eqpin_path = args.eqpin_path)
     
     # Print summary
     if not args.quiet:
@@ -400,6 +403,10 @@ def main():
     # Save report
     qc.save_report_to_file(report, args.output_report)
 
+    # if qc have error, set a breakpoint
+    if report.has_errors():
+        logger.error("QC has errors. Please read the error report or contact Lewis 24393.")
+        breakpoint()
 
 if __name__ == "__main__":
     main() 
