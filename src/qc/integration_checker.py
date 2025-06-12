@@ -142,6 +142,8 @@ class IntegrationChecker:
         # Placeholder implementation for lib_profiler unit test
         components = def_data.get('components', [])
         
+        lib_profiler_data = self._get_lib_profiler_data(lib_profiler_path)
+
         if not lib_profiler_path:
             self.report.add_issue(QCIssue(
                 severity=Severity.INFO,
