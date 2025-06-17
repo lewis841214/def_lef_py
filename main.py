@@ -20,7 +20,7 @@ with open(output_dir + '/lef_outputs.pkl', 'rb') as file:
 
 id2instanceInfo = def_output['id2instanceInfo']
 instance2id = def_output['instance2id']
-netId = def_output['netId']
+net2id = def_output['net2id']
 id2NetInfo = def_output['id2NetInfo']
 
 cell_dict = lef_output['cell_dict']
