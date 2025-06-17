@@ -6,9 +6,11 @@ from tqdm import tqdm
 parser = argparse.ArgumentParser(description='given def path, return instance/net dict to -o ')
 parser.add_argument('--def_lef_folder', type = str, default="../tmp" )
 parser.add_argument('--net_cell_mat_path', type = str, default="./tmp/net_cell_mat.pkl" )
+parser.add_argument('--net_2_block_path', type = str, default="./tmp/net_2_block.pkl" )
 
 args = parser.parse_args()
 net_cell_mat_path = args.net_cell_mat_path
+net_2_block_path = args.net_2_block_path
 output_dir = args.def_lef_folder
 
 with open(output_dir + '/def_outputs.pkl', 'rb') as file:
@@ -24,12 +26,15 @@ id2NetInfo = def_output['id2NetInfo']
 cell_dict = lef_output['cell_dict']
 
 def net_cell_mat_gen():
+    net_2_block = {}
     mat_collector = []
     for index in tqdm(id2NetInfo.keys()):
         piece = id2NetInfo[index]
         if len(piece['connections']) == 1:
             continue
         
+        net_block = []
+
         for connect in piece['connections']:
             assert connect['instance_name'] == id2instanceInfo[instance2id[connect['instance_name']]]['instance_name']
             cell_name = id2instanceInfo[instance2id[connect['instance_name']]]['cell_name']
@@ -57,8 +62,10 @@ def net_cell_mat_gen():
                 'l_cell': f'{cell_name}@{pin_name}{ds_symbole}'
             }
             mat_collector.append(row)
+            net_block.append(row)
+        net_2_block[piece['net_name']] = pd.DataFrame(net_block)
     net_cell_mat = pd.DataFrame(mat_collector)
-    return net_cell_mat
+    return net_cell_mat, net_2_block
 
 def net_instance_dict_gen():
     net_instance_dict = {}
@@ -101,9 +108,11 @@ def net_instance_dict_gen():
     return net_instance_dict
 
 net_instance_dict = net_instance_dict_gen()
-net_cell_mat = net_cell_mat_gen()
+net_cell_mat, net_2_block = net_cell_mat_gen()
 with open(net_cell_mat_path, 'wb') as file:
     pickle.dump(net_cell_mat, file)
+with open(net_2_block_path, 'wb') as file:
+    pickle.dump(net_2_block, file)
 
 '''
 
