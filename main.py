@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser(description='given def path, return instance/ne
 parser.add_argument('--def_lef_folder', type = str, default="../tmp" )
 parser.add_argument('--net_cell_mat_path', type = str, default="./tmp/net_cell_mat.pkl" )
 parser.add_argument('--net_2_block_path', type = str, default="./tmp/net_2_block.pkl" )
+parser.add_argument('--test_mode', type = bool, default=False  ) # False, True
 
 args = parser.parse_args()
 net_cell_mat_path = args.net_cell_mat_path
@@ -70,6 +71,10 @@ def net_cell_mat_gen():
 def net_instance_dict_gen():
     net_instance_dict = {}
     for index in tqdm(id2NetInfo.keys()):
+        if args.test_mode:
+            if index >10000:
+                break
+        
         piece = id2NetInfo[index]
         
         if len(piece['connections']) == 1:
