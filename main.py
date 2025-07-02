@@ -30,9 +30,6 @@ def net_cell_mat_gen():
     net_2_block = {}
     mat_collector = []
     for index in tqdm(id2NetInfo.keys()):
-        if args.test_mode:
-            if index >100000:
-                break
         piece = id2NetInfo[index]
         if len(piece['connections']) == 1:
             continue
